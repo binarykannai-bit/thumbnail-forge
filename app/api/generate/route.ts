@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini',
+        model: 'gpt-5.4',
         response_format: { type: 'json_object' },
         messages: [
           {
