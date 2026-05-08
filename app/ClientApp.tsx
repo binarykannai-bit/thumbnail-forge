@@ -80,7 +80,7 @@ export default function ClientApp() {
     const json = await resp.json();
     const rawB64 = json.imageBase64;
     if (!rawB64) return null;
-    return await cropTo1280x720(rawB64);
+    return rawB64;
   }
 
   const generate = async () => {
