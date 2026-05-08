@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'gpt-image-2',
         prompt,
-        size: '1536x1024',
+        size: '1280x720',
         quality: 'medium',
         n: 1,
       }),
