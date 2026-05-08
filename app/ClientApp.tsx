@@ -241,8 +241,19 @@ function LoadingOverlay({ phase, msg, progress, thumbStatuses }: any) {
     return () => clearInterval(interval);
   }, [phase]);
 
-  const totalEstimate = phase === 'analyzing' ? 5 : phase === 'titles' ? 25 : 60;
-  const estimatePercent = Math.min(95, (elapsed / totalEstimate) * 100);
+  const totalEstimate = phase === 'analyzing' ? 5 : phase === 'titles' ? 30 : 70;
+  const ratio = elapsed / totalEstimate;
+  let estimatePercent: number;
+  if (ratio < 1) {
+    // 予想時間内: 0%〜80%まで線形
+    estimatePercent = ratio * 80;
+  } else {
+    // 予想時間超過後: 80%〜99%まで漸近的に減速
+    const overtime = ratio - 1;
+    estimatePercent = 80 + 19 * (1 - Math.exp(-overtime * 0.7));
+  }
+  estimatePercent = Math.min(99, estimatePercent);
+  const isOverEstimate = elapsed > totalEstimate;
 
   return (
     <div style={styles.loadingOverlay}>
@@ -322,6 +333,17 @@ function LoadingOverlay({ phase, msg, progress, thumbStatuses }: any) {
             <div style={styles.progressText}>
               推定進捗: {Math.round(estimatePercent)}%
             </div>
+            {isOverEstimate && (
+              <div style={{
+                fontSize: 12,
+                color: C.warning,
+                textAlign: 'center',
+                marginTop: 8,
+                fontWeight: 700,
+              }}>
+                予想時間を超過しています。AIモデルが処理中です。もう少しお待ちください...
+              </div>
+            )}
           </>
         )}
 
