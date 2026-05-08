@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 /**
  * public/training/ フォルダから高CTR成功サムネを読み込んで base64 化する。
