@@ -1,1 +1,54 @@
+name: Generate Training Embeddings
 
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'public/training/**'
+      - 'scripts/generate-embeddings.ts'
+  workflow_dispatch:
+
+concurrency:
+  group: embeddings-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate embeddings
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx tsx scripts/generate-embeddings.ts
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          if git diff --quiet public/training/embeddings.json; then
+            echo "✅ embeddings.json に変更なし、コミットしません"
+          else
+            git add public/training/embeddings.json
+            git commit -m "🤖 Auto-update embeddings.json"
+            git push
+            echo "✅ embeddings.json を更新しました"
+          fi
