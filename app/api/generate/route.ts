@@ -447,18 +447,26 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. ユーザーがアップした参考サムネ
+    // detail: 'high' で送信（テキスト・配色・装飾を詳細に認識させる）
     (data.refs || []).forEach((ref: any) => {
       userContent.push({
         type: 'image_url',
-        image_url: { url: `data:${ref.mediaType};base64,${ref.base64}` },
+        image_url: {
+          url: `data:${ref.mediaType};base64,${ref.base64}`,
+          detail: 'high',
+        },
       });
     });
 
     // 3. ビジュアル素材（顔写真・キャラクター画像など）
+    // detail: 'high' で送信（人物の特徴・キャラ詳細を正確に把握させる）
     (data.visualAssets || []).forEach((asset: any) => {
       userContent.push({
         type: 'image_url',
-        image_url: { url: `data:${asset.mediaType};base64,${asset.base64}` },
+        image_url: {
+          url: `data:${asset.mediaType};base64,${asset.base64}`,
+          detail: 'high',
+        },
       });
     });
 
