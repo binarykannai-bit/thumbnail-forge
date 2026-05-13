@@ -1,0 +1,51 @@
+name: Generate Training Embeddings
+
+# トリガー：
+# 1. public/training/ に画像が追加・削除・変更された時
+# 2. 手動実行（Actionsタブから）
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'public/training/**.jpg'
+      - 'public/training/**.jpeg'
+      - 'public/training/**.png'
+      - 'public/training/**.webp'
+  workflow_dispatch:  # 手動実行可能
+
+jobs:
+  generate-embeddings:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # embeddings.json を commit するため
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install --silent
+          npm install -g tsx
+
+      - name: Generate embeddings.json
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx tsx scripts/generate-embeddings.ts
+
+      - name: Commit and push embeddings.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/training/embeddings.json
+          if git diff --staged --quiet; then
+            echo "No changes to embeddings.json"
+          else
+            git commit -m "chore: auto-update embeddings.json"
+            git push
+          fi
