@@ -93,20 +93,50 @@ export default function ClientApp({ userEmail }: { userEmail?: string | null } =
 
     try {
       setLoadingPhase('titles');
-      setLoadingMsg('タイトル案とサムネプロンプトを生成中...');
+      setLoadingMsg('タイトル案 & サムネプロンプトを並列生成中...');
 
-      const apiResp = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data }),
-      });
+      // ★ 並列実行：タイトル生成（gpt-5-mini 軽量）とサムネ生成（gpt-5 通常）を同時に走らせる
+      const [titlesResp, thumbsResp] = await Promise.all([
+        fetch('/api/generate-titles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            script: data.script,
+            mainCategory: data.mainCategory,
+            subCategory: data.subCategory,
+            audiences: data.audiences,
+            psychology: data.psychology,
+            direction: data.direction,
+            persona: data.persona,
+            requiredPhrases: data.requiredPhrases,
+            ng: data.ng,
+          }),
+        }),
+        fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data }),
+        }),
+      ]);
 
-      if (!apiResp.ok) {
-        const errJson = await apiResp.json().catch(() => ({}));
-        throw new Error(errJson.error || `API エラー (${apiResp.status})`);
+      // エラーチェック（両方）
+      if (!titlesResp.ok) {
+        const errJson = await titlesResp.json().catch(() => ({}));
+        throw new Error(errJson.error || `タイトル生成APIエラー (${titlesResp.status})`);
+      }
+      if (!thumbsResp.ok) {
+        const errJson = await thumbsResp.json().catch(() => ({}));
+        throw new Error(errJson.error || `サムネ生成APIエラー (${thumbsResp.status})`);
       }
 
-      const parsed = await apiResp.json();
+      const titlesJson = await titlesResp.json();
+      const thumbsJson = await thumbsResp.json();
+
+      // titles と thumbnails をマージ
+      const parsed = {
+        titles: titlesJson.titles || [],
+        thumbnails: thumbsJson.thumbnails || [],
+      };
 
       const totalThumbs = parsed.thumbnails?.length || 0;
       setLoadingPhase('images');
@@ -227,7 +257,7 @@ function LoadingOverlay({ phase, msg, progress, thumbStatuses }: any) {
   const [elapsed, setElapsed] = useState(0);
   const phases = [
     { id: 'analyzing', label: '台本分析', desc: 'フックと心理トリガーを抽出' },
-    { id: 'titles', label: 'タイトル生成', desc: '3案 + プロンプト3案を作成' },
+    { id: 'titles', label: 'タイトル + サムネ案生成', desc: '並列実行で高速生成' },
     { id: 'images', label: 'サムネ画像生成', desc: 'GPT Image 2で3枚生成' },
   ];
   const currentIdx = phases.findIndex(p => p.id === phase);
@@ -356,7 +386,7 @@ function LoadingOverlay({ phase, msg, progress, thumbStatuses }: any) {
         {/* Hint */}
         <div style={styles.loadingHint}>
           {phase === 'analyzing' && 'GPT-5.4が原稿から最大のフック・キラーワード・心理トリガーを抽出しています'}
-          {phase === 'titles' && 'タイトル3案 + サムネ3案のプロンプトを構築中'}
+          {phase === 'titles' && 'タイトル案 + サムネ案を並列生成中（gpt-5-mini × gpt-5）'}
           {phase === 'images' && 'GPT Image 2 が3枚を並列で生成中。各画像20〜40秒'}
         </div>
       </div>
