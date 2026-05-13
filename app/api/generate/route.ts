@@ -321,47 +321,10 @@ const RESPONSE_SCHEMA = {
       type: 'object',
       additionalProperties: false,
       properties: {
-        titles: {
-          type: 'array',
-          description: 'YouTubeタイトル案。必ず3つ生成。検索ワード+数字+感情訴求の構造を厳守。',
-          items: {
-            type: 'object',
-            additionalProperties: false,
-            properties: {
-              text: {
-                type: 'string',
-                description:
-                  'タイトル本文。40文字以内。「検索キーワード(先頭)+数字+感情訴求」の構造を必ず守る。',
-              },
-              trigger: {
-                type: 'string',
-                enum: [
-                  '知らないと損型',
-                  '驚き＋利益型',
-                  '共感＋逆転型',
-                  '結論先出し型',
-                  '問題提起型',
-                ],
-                description: '心理トリガー型。3つのタイトルで全部異なる型を使うこと。',
-              },
-              structure: {
-                type: 'string',
-                description:
-                  '構造の自己証明。「検索ワード:○○ / 数字:○○ / 感情訴求:○○」形式で記述。',
-              },
-              expectedCTR: {
-                type: 'string',
-                enum: ['高', '中高', '中'],
-                description: '想定CTR評価。',
-              },
-            },
-            required: ['text', 'trigger', 'structure', 'expectedCTR'],
-          },
-        },
         thumbnails: {
           type: 'array',
           description:
-            'サムネ案。必ず3つ生成。各thumbnailは同じインデックスのtitleと1対1で連動させる。',
+            'サムネ案。必ず3つ生成。各thumbnailは独立した訴求軸で差別化する。',
           items: {
             type: 'object',
             additionalProperties: false,
@@ -369,12 +332,6 @@ const RESPONSE_SCHEMA = {
               label: {
                 type: 'string',
                 description: '方向性ラベル（例: 強インパクト型・恐怖訴求 / 強キラーワード型 など）',
-              },
-              linkedTitleIndex: {
-                type: 'integer',
-                enum: [0, 1, 2],
-                description:
-                  '対応するtitlesのインデックス。thumbnails[0]→0, [1]→1, [2]→2。同インデックスのタイトルと訴求軸・キーワードを連動させる。',
               },
               thumbnailText: {
                 type: 'object',
@@ -414,11 +371,11 @@ const RESPONSE_SCHEMA = {
                   'GPT Image 2用の英語プロンプト(500語以上)。1280x720で構図、main/sub日本語をダブルクォートで指定、構図パターン・配色・文字配置を明記。',
               },
             },
-            required: ['label', 'linkedTitleIndex', 'thumbnailText', 'imagePrompt'],
+            required: ['label', 'thumbnailText', 'imagePrompt'],
           },
         },
       },
-      required: ['titles', 'thumbnails'],
+      required: ['thumbnails'],
     },
   },
 };
